@@ -863,6 +863,7 @@ public abstract class AbstractAQuery<T extends AbstractAQuery<T>> implements Con
 	
 	/**
 	 * Set the image of an ImageView from a file with a custom callback.
+	 * Auto rotate is enabled.
 	 *
 	 * @param file The image file.
 	 * @param memCache Use memory cache.
@@ -875,7 +876,7 @@ public abstract class AbstractAQuery<T extends AbstractAQuery<T>> implements Con
 	public T image(File file, boolean memCache, int targetWidth, BitmapAjaxCallback callback){
 		
 		if(callback == null) callback = new BitmapAjaxCallback();		
-		callback.file(file);	
+		callback.file(file).rotate(true);
 		
 		String url = null;
 		if(file != null) url = file.getAbsolutePath();
@@ -2087,6 +2088,29 @@ public abstract class AbstractAQuery<T extends AbstractAQuery<T>> implements Con
 		
 		AjaxCallback<K> cb = new AjaxCallback<K>();
 		cb.type(type).weakHandler(handler, callback);
+		
+		return ajax(url, params, type, cb);
+		
+	}
+	
+	/**
+	 * Ajax call with PUT method.
+	 *
+	 * The handler signature must be (String url, <K> object, AjaxStatus status)
+	 *
+	 * @param url url
+	 * @param params 
+	 * @param type data type
+	 * @param callback callback method name
+	 * @return self
+	 * 
+	 * 
+	 */
+	
+	public <K> T put(String url, Map<String, ?> params, Class<K> type, Object handler, String callback){
+		
+		AjaxCallback<K> cb = new AjaxCallback<K>();
+		cb.type(type).weakHandler(handler, callback).method(METHOD_PUT);
 		
 		return ajax(url, params, type, cb);
 		

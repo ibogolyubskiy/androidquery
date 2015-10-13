@@ -135,6 +135,9 @@ public class BitmapAjaxCallback extends AbstractAjaxCallback<Bitmap, BitmapAjaxC
 	 */
 	public BitmapAjaxCallback file(File imageFile){
 		this.imageFile = imageFile;
+		if(imageFile != null){
+			url(imageFile.getAbsolutePath());
+		}
 		return this;
 	}
 	
@@ -265,7 +268,7 @@ public class BitmapAjaxCallback extends AbstractAjaxCallback<Bitmap, BitmapAjaxC
 	}
 	
 	private static boolean isInputSharable(){
-		AQUtility.debug("level", AQuery.SDK_INT);
+		//AQUtility.debug("level", AQuery.SDK_INT);
 		return AQuery.SDK_INT < 19;
 		
 	}
