@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -2017,7 +2018,7 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable{
 	
 	private static final String lineEnd = "\r\n";
 	private static final String twoHyphens = "--";
-	private static final String boundary = "*****";
+	public static final String boundary = "*****";
 	
 	
 	private static boolean isMultiPart(Map<String, Object> params){
@@ -2025,7 +2026,8 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable{
 		for(Map.Entry<String, Object> entry: params.entrySet()){
 			Object value = entry.getValue();
 			AQUtility.debug(entry.getKey(), value);
-			if(value instanceof File || value instanceof byte[] || value instanceof InputStream) return true;
+			if(value instanceof File || value instanceof byte[] || 
+			   value instanceof InputStream || value instanceof MimeTypeWrapper) return true;
 		}
 		
 		return false;
@@ -2142,28 +2144,34 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable{
 		return AQUtility.toBytes(is);
 	}
 	
+	private static final String defaultMimeType = "application/octet-stream";
 	
-	private static void writeObject(DataOutputStream dos, String name, Object obj) throws IOException{
+	private static void writeObject(DataOutputStream dos, String name, Object obj) throws IOException {
 		
 		if(obj == null) return;
 		
+		if (obj instanceof MimeTypeWrapper) {
+			MimeTypeWrapper wrapper = (MimeTypeWrapper)obj;
+			writeObjectWithMimeType(dos, name, wrapper.mimeType, wrapper.obj);
+		} else
+			writeObjectWithMimeType(dos, name, defaultMimeType, obj);
+	}
+
+	private static void writeObjectWithMimeType(DataOutputStream dos, String name, String mimeType, Object obj) throws IOException, FileNotFoundException {
 		if(obj instanceof File){
-
 			File file = (File) obj;
-			writeData(dos, name, file.getName(), new FileInputStream(file));
-
+			writeData(dos, name, file.getName(), mimeType, new FileInputStream(file));
 		}else if(obj instanceof byte[]){
-			writeData(dos, name, name, new ByteArrayInputStream((byte[]) obj));
+			writeData(dos, name, name, mimeType, new ByteArrayInputStream((byte[]) obj));
 		}else if(obj instanceof InputStream){
-			writeData(dos, name, name, (InputStream) obj);
+			writeData(dos, name, name, mimeType, (InputStream) obj);
 		}else{
 			writeField(dos, name, obj.toString());
 		}
-		
 	}
 
 	
-	private static void writeData(DataOutputStream dos, String name, String filename, InputStream is) throws IOException {
+	private static void writeData(DataOutputStream dos, String name, String filename, String mimeType, InputStream is) throws IOException {
 		
 		dos.writeBytes(twoHyphens + boundary + lineEnd);
 		dos.writeBytes("Content-Disposition: form-data; name=\""+name+"\";"
@@ -2171,7 +2179,7 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable{
 		
 		
 		//added to specify type
-		dos.writeBytes("Content-Type: application/octet-stream");
+		dos.writeBytes("Content-Type: " + mimeType);
 		dos.writeBytes(lineEnd);
 		dos.writeBytes("Content-Transfer-Encoding: binary");
 		dos.writeBytes(lineEnd);
